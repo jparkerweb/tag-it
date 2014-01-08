@@ -214,7 +214,7 @@
             if (!addedExistingFromSingleFieldNode) {
                 this.tagList.children('li').each(function() {
                     if (!$(this).hasClass('tagit-new')) {
-                        that.createTag($(this).text(), $(this).attr('class'), true);
+                        that.createTag($(this).text(), $(this).attr('class'), true, $(this).attr("data-attr1name"),$(this).attr($(this).attr("data-attr1name")), $(this).attr("data-attr2name"), $(this).attr($(this).attr("data-attr2name")), $(this).attr("data-iconClass"));
                         $(this).remove();
                     }
                 });
@@ -436,7 +436,13 @@
             return Boolean($.effects && ($.effects[name] || ($.effects.effect && $.effects.effect[name])));
         },
 
-        createTag: function(value, additionalClass, duringInitialization) {
+        createTag: function(value, additionalClass, duringInitialization, attr1name, attr1, attr2name, attr2, iconClass) {
+            attr1name = typeof attr1name !== 'undefined' ? attr1name : 'data-attr1';
+            attr1 = typeof attr1 !== 'undefined' ? attr1 : '';
+            attr2name = typeof attr2name !== 'undefined' ? attr2name : 'data-attr2';
+            attr2 = typeof attr2 !== 'undefined' ? attr2 : '';
+            iconClass = typeof iconClass !== 'undefined' ? iconClass : 'display-none';
+            
             var that = this;
 
             value = $.trim(value);
@@ -473,6 +479,10 @@
             var tag = $('<li></li>')
                 .addClass('tagit-choice ui-widget-content ui-state-default ui-corner-all')
                 .addClass(additionalClass)
+                .attr(attr1name, attr1)
+                .attr(attr2name, attr2)
+                .attr("data-iconClass", iconClass)
+                .append("<i class=" + iconClass + "></i>")
                 .append(label);
 
             if (this.options.readOnly){
@@ -495,7 +505,7 @@
             // Unless options.singleField is set, each tag has a hidden input field inline.
             if (!this.options.singleField) {
                 var escapedValue = label.html();
-                tag.append('<input type="hidden" value="' + escapedValue + '" name="' + this.options.fieldName + '" class="tagit-hidden-field" />');
+                tag.append('<input type="hidden" ' + attr1name + '="' + attr1 + '" ' + attr2name + '="' + attr2 + '" data-iconClass="' + iconClass + '" value="' + escapedValue + '" name="' + this.options.fieldName + '" class="tagit-hidden-field" />');
             }
 
             if (this._trigger('beforeTagAdded', null, {
@@ -533,6 +543,7 @@
 
         removeTag: function(tag, animate) {
             animate = typeof animate === 'undefined' ? this.options.animate : animate;
+            animate = false;
 
             tag = $(tag);
 

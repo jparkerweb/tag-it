@@ -1,5 +1,12 @@
+.display-none {
+    display: none !important;
+}
+
+.ui-widget-content {
+    border: 1px solid #CCC;
+}
 ul.tagit {
-    padding: 1px 5px;
+    padding: 1px 2px;
     overflow: auto;
     margin-left: inherit; /* usually we don't want the regular ul margins. */
     margin-right: inherit;
@@ -7,7 +14,22 @@ ul.tagit {
 ul.tagit li {
     display: block;
     float: left;
-    margin: 2px 5px 2px 0;
+    margin: 1px 3px 1px 0;
+    padding: 2px 18px 2px 5px !important;
+}
+ul.tagit li:not(.tagit-new) {
+    background: #F9F9F9 !important;
+}
+ul.tagit input[type="text"] {
+    width: 0; 
+}
+ul.tagit input[type="text"]:focus, 
+ul.tagit input[type="text"]:active {
+    width: 177px;
+}
+ul.tagit > li > i {
+    margin-right: 5px;
+    color: gray;
 }
 ul.tagit li.tagit-choice {    
     position: relative;
@@ -21,11 +43,13 @@ ul.tagit li.tagit-choice-read-only {
 } 
 
 ul.tagit li.tagit-choice-editable { 
-    padding: .2em 18px .2em .5em; 
+    padding: 2px 18px 2px 5px;
 } 
 
 ul.tagit li.tagit-new {
     padding: .25em 4px .25em 0;
+    padding: 2px 1px !important;
+    line-height: 22px;
 }
 
 ul.tagit li.tagit-choice a.tagit-label {
@@ -63,7 +87,8 @@ ul.tagit input[type="text"] {
     border: none;
     margin: 0;
     padding: 0;
-    width: inherit;
     background-color: inherit;
     outline: none;
+
+    vertical-align: bottom;
 }
