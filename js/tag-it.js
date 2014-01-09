@@ -84,6 +84,9 @@
             // created for tag-it.
             tabIndex: null,
 
+            // custom class for Input list item (LI)
+            inputLIClass: "",
+
             // Event callbacks.
             beforeTagAdded      : null,
             afterTagAdded       : null,
@@ -175,7 +178,7 @@
                 .addClass('tagit')
                 .addClass('ui-widget ui-widget-content ui-corner-all')
                 // Create the input field.
-                .append($('<li class="tagit-new"></li>').append(this.tagInput))
+                .append($('<li class="tagit-new '+ this.options.inputLIClass +'"></li>').append(this.tagInput))
                 .click(function(e) {
                     var target = $(e.target);
                     if (target.hasClass('tagit-label')) {
