@@ -87,6 +87,9 @@
             // custom class for Input list item (LI)
             inputLIClass: "",
 
+            // disallow tags. example value: ["and", "or"]
+            disallowTagList: [""], 
+
             // Event callbacks.
             beforeTagAdded      : null,
             afterTagAdded       : null,
@@ -439,6 +442,16 @@
             return Boolean($.effects && ($.effects[name] || ($.effects.effect && $.effects.effect[name])));
         },
 
+        disallowTagList: function(value) {
+            var disallowTagListArray = this.options.disallowTagList;
+            for (var i = 0; i < disallowTagListArray.length; i++) {
+                if (disallowTagListArray[i].toLowerCase() == value.toLowerCase()) {
+                    return "";
+                }
+            }
+            return value;
+        },
+
         createTag: function(value, additionalClass, duringInitialization, attr1name, attr1, attr2name, attr2, iconClass) {
             attr1name = typeof attr1name !== 'undefined' ? attr1name : 'data-attr1';
             attr1 = typeof attr1 !== 'undefined' ? attr1 : '';
@@ -452,6 +465,10 @@
 
             if(this.options.preprocessTag) {
                 value = this.options.preprocessTag(value);
+            }
+
+            if(this.options.disallowTagList) {
+                value = this.disallowTagList(value);
             }
 
             if (value === '') {
