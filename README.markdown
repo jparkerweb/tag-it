@@ -167,6 +167,21 @@ Optionally set a *placeholder* attribute on the `input` that gets created for ta
 
 Defaults to *null*
 
+### inputLIClass (String)
+Optionally set a *class* attribute on the `li` that gets created for tag-it user input.
+    
+    $("#myTags").tagit({
+        inputLIClass: "myCoolInputClass"
+    });
+
+### disallowTagList (String Array)
+Optionally set a list of tags that are not allowed (won't be created)
+
+    $("#myTags").tagit({
+        disallowTagList: ["and", "or"]
+    });
+
+`and` or `or` will not be created why typed in the input tag field
 
 ## Events
 
