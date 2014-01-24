@@ -446,6 +446,7 @@
             var disallowTagListArray = this.options.disallowTagList;
             for (var i = 0; i < disallowTagListArray.length; i++) {
                 if (disallowTagListArray[i].toLowerCase() == value.toLowerCase()) {
+                    this.tagInput.val("");
                     return "";
                 }
             }
@@ -453,11 +454,11 @@
         },
 
         createTag: function(value, additionalClass, duringInitialization, attr1name, attr1, attr2name, attr2, iconClass) {
-            attr1name = typeof attr1name !== 'undefined' ? attr1name : 'data-attr1';
+            attr1name = (typeof attr1name !== 'undefined' && attr1name !== '') ? attr1name : 'data-attr1';
             attr1 = typeof attr1 !== 'undefined' ? attr1 : '';
-            attr2name = typeof attr2name !== 'undefined' ? attr2name : 'data-attr2';
+            attr2name = (typeof attr2name !== 'undefined' && attr2name !== '') ? attr2name : 'data-attr2';
             attr2 = typeof attr2 !== 'undefined' ? attr2 : '';
-            iconClass = typeof iconClass !== 'undefined' ? iconClass : 'display-none';
+            iconClass = (typeof iconClass !== 'undefined' && iconClass !== '') ? iconClass : 'display-none';
             
             var that = this;
 
