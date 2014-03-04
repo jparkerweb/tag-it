@@ -25,6 +25,8 @@
 *   jQuery UI v1.8+
 */
 (function($) {
+    // RegEx to split a string by comma or space but keep quoted values as-is
+    var matchTags = /("[^"]+"|[^,\s]+)/g;
 
     $.widget('ui.tagit', {
         options: {
@@ -203,7 +205,7 @@
                 if (this.options.singleFieldNode) {
                     // Add existing tags from the input field.
                     var node = $(this.options.singleFieldNode);
-                    var tags = node.val().split(this.options.singleFieldDelimiter);
+                    var tags = node.val().match(matchTags) || [];
                     node.val('');
                     $.each(tags, function(index, tag) {
                         that.createTag(tag, null, true);
@@ -219,18 +221,19 @@
             // Add existing tags from the list, if any.
             if (!addedExistingFromSingleFieldNode) {
                 this.tagList.children('li').each(function() {
-                    if (!$(this).hasClass('tagit-new')) {
-                        that.createTag($(this).text(), $(this).attr('class'), true, $(this).attr("data-attr1name"),$(this).attr($(this).attr("data-attr1name")), $(this).attr("data-attr2name"), $(this).attr($(this).attr("data-attr2name")), $(this).attr("data-iconClass"));
-                        $(this).remove();
-                    }
+                    var $this = $(this);
+                    if ($this.hasClass("tagit-new")) return;
+                    that.createTag(that._cleanedInput($this.text()), $this.attr('class'), true, $this.attr("data-attr1name"),$this.attr($this.attr("data-attr1name")), $this.attr("data-attr2name"), $this.attr($this.attr("data-attr2name")), $this.attr("data-iconClass"));
+                    $this.remove();
                 });
             }
 
             // Events.
             this.tagInput
                 .keydown(function(event) {
+                    var inputVal = that.tagInput.val();
                     // Backspace is not detected within a keypress, so it must use keydown.
-                    if (event.which == $.ui.keyCode.BACKSPACE && that.tagInput.val() === '') {
+                    if (event.which == $.ui.keyCode.BACKSPACE && inputVal === '') {
                         var tag = that._lastTag();
                         if (!that.options.removeConfirmation || tag.hasClass('remove')) {
                             // When backspace is pressed, the last tag is deleted.
@@ -247,42 +250,51 @@
                     // Tab will also create a tag, unless the tag input is empty,
                     // in which case it isn't caught.
                     if (
-                        (event.which === $.ui.keyCode.COMMA && event.shiftKey === false) ||
                         event.which === $.ui.keyCode.ENTER ||
                         (
                             event.which == $.ui.keyCode.TAB &&
-                            that.tagInput.val() !== ''
+                            inputVal !== ''
+                        ) ||
+                        (
+                            event.which == $.ui.keyCode.COMMA && event.shiftKey === false &&
+                            that._valueHasClosedQuotes(inputVal)
                         ) ||
                         (
                             event.which == $.ui.keyCode.SPACE &&
                             that.options.allowSpaces !== true &&
-                            (
-                                $.trim(that.tagInput.val()).replace( /^s*/, '' ).charAt(0) != '"' ||
-                                (
-                                    $.trim(that.tagInput.val()).charAt(0) == '"' &&
-                                    $.trim(that.tagInput.val()).charAt($.trim(that.tagInput.val()).length - 1) == '"' &&
-                                    $.trim(that.tagInput.val()).length - 1 !== 0
-                                )
-                            )
+                            that._valueHasClosedQuotes(inputVal)
                         )
                     ) {
                         // Enter submits the form if there's no text in the input.
-                        if (!(event.which === $.ui.keyCode.ENTER && that.tagInput.val() === '')) {
+                        if (!(event.which === $.ui.keyCode.ENTER && inputVal === '')) {
                             event.preventDefault();
                         }
 
                         // Autocomplete will create its own tag from a selection and close automatically.
                         if (!(that.options.autocomplete.autoFocus && that.tagInput.data('autocomplete-open'))) {
                             that.tagInput.autocomplete('close');
-                            that.createTag(that._cleanedInput());
+                            that.createTag(that._cleanedInput(inputVal));
                         }
                     }
                 }).blur(function(e){
+                    var inputVal = that.tagInput.val();
                     // Create a tag when the element loses focus.
                     // If autocomplete is enabled and suggestion was clicked, don't add it.
                     if (!that.tagInput.data('autocomplete-open')) {
-                        that.createTag(that._cleanedInput());
+                        that.createTag(that._cleanedInput(inputVal));
                     }
+                }).on("input propertychange", function(e) {
+                    var values, lastItem, inputVal = that.tagInput.val();
+                    if (!inputVal || !that._valueHasClosedQuotes(inputVal)) return;
+                    // Split on all whitespace except if in quotes
+                    values = inputVal.match(matchTags);
+
+                    if (values.length <= 1) return;
+                    lastItem = values.pop(); // Don't create a tag for the last item.
+                    for (var i = 0; i < values.length; i++) {
+                        that.createTag(that._cleanedInput(values[i]));
+                    }
+                    that.tagInput.val(lastItem);
                 });
 
             // Autocomplete.
@@ -357,9 +369,14 @@
             return this;
         },
 
-        _cleanedInput: function() {
-            // Returns the contents of the tag input, cleaned and ready to be passed to createTag
-            return $.trim(this.tagInput.val().replace(/^"(.*)"$/, '$1'));
+        _cleanedInput: function(inputVal) {
+            // Strip leading/trailing whitespace as well as starting and
+            // ending quotation mark. Returns the contents of the tag input,
+            // cleaned and ready to be passed to createTag
+            inputVal = $.trim(inputVal);
+            return (inputVal.charAt(0) == "\"") ?
+                    inputVal.substr(1, (inputVal.length - 2))
+                    : inputVal;
         },
 
         _lastTag: function() {
@@ -370,15 +387,17 @@
             return this.tagList.find('.tagit-choice:not(.removed)');
         },
 
+        _valueHasClosedQuotes: function(inputVal) {
+            // Just check for an even number of quotes for now.
+            return ((inputVal.split("\"").length - 1) % 2 === 0);
+         },
+
         assignedTags: function() {
             // Returns an array of tag string values
             var that = this;
             var tags = [];
             if (this.options.singleField) {
-                tags = $(this.options.singleFieldNode).val().split(this.options.singleFieldDelimiter);
-                if (tags[0] === '') {
-                    tags = [];
-                }
+                tags = $(this.options.singleFieldNode).val().match(matchTags) || [];
             } else {
                 this._tags().each(function() {
                     tags.push(that.tagLabel(this));
@@ -539,6 +558,10 @@
 
             if (this.options.singleField) {
                 var tags = this.assignedTags();
+                // If our tag to add contains the delimiter, then quote it.
+                if (~value.indexOf(this.options.singleFieldDelimiter)) {
+                    value = "\"" + value + "\"";
+                }
                 tags.push(value);
                 this._updateSingleTagsField(tags);
             }
