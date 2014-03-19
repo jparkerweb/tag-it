@@ -26,7 +26,9 @@
 */
 (function($) {
     // RegEx to split a string by comma or space but keep quoted values as-is
-    var matchTags = /("[^"]+"|[^,\s]+)/g;
+    var matchTags = /("[^"]+"|[^,\s]+)/g
+    // If the tag contains any of these values, it needs to be quoted.
+      , quoteTags = /[\s,]/
 
     $.widget('ui.tagit', {
         options: {
@@ -223,7 +225,14 @@
                 this.tagList.children('li').each(function() {
                     var $this = $(this);
                     if ($this.hasClass("tagit-new")) return;
-                    that.createTag(that._cleanedInput($this.text()), $this.attr('class'), true, $this.attr("data-attr1name"),$this.attr($this.attr("data-attr1name")), $this.attr("data-attr2name"), $this.attr($this.attr("data-attr2name")), $this.attr("data-iconClass"));
+                    var attr1name = $this.attr("data-attr1name") || "data-attr1"
+                      , attr2name = $this.attr("data-attr2name") || "data-attr2";
+                    that.createTag(
+                        $this.text(), $this.attr('class'), true,
+                        attr1name, $this.attr(attr1name),
+                        attr2name, $this.attr(attr2name),
+                        $this.attr("data-iconClass")
+                    );
                     $this.remove();
                 });
             }
@@ -273,7 +282,7 @@
                         // Autocomplete will create its own tag from a selection and close automatically.
                         if (!(that.options.autocomplete.autoFocus && that.tagInput.data('autocomplete-open'))) {
                             that.tagInput.autocomplete('close');
-                            that.createTag(that._cleanedInput(inputVal));
+                            that.createTag(inputVal);
                         }
                     }
                 }).blur(function(e){
@@ -281,7 +290,7 @@
                     // Create a tag when the element loses focus.
                     // If autocomplete is enabled and suggestion was clicked, don't add it.
                     if (!that.tagInput.data('autocomplete-open')) {
-                        that.createTag(that._cleanedInput(inputVal));
+                        that.createTag(inputVal);
                     }
                 }).on("input propertychange", function(e) {
                     var values, lastItem, inputVal = that.tagInput.val();
@@ -292,7 +301,7 @@
                     if (values.length <= 1) return;
                     lastItem = values.pop(); // Don't create a tag for the last item.
                     for (var i = 0; i < values.length; i++) {
-                        that.createTag(that._cleanedInput(values[i]));
+                        that.createTag(values[i]);
                     }
                     that.tagInput.val(lastItem);
                 });
@@ -473,15 +482,9 @@
         },
 
         createTag: function(value, additionalClass, duringInitialization, attr1name, attr1, attr2name, attr2, iconClass) {
-            attr1name = (typeof attr1name !== 'undefined' && attr1name !== '') ? attr1name : 'data-attr1';
-            attr1 = typeof attr1 !== 'undefined' ? attr1 : '';
-            attr2name = (typeof attr2name !== 'undefined' && attr2name !== '') ? attr2name : 'data-attr2';
-            attr2 = typeof attr2 !== 'undefined' ? attr2 : '';
-            iconClass = (typeof iconClass !== 'undefined' && iconClass !== '') ? iconClass : 'display-none';
-            
             var that = this;
 
-            value = $.trim(value);
+            value = this._cleanedInput(value);
 
             if(this.options.preprocessTag) {
                 value = this.options.preprocessTag(value);
@@ -518,12 +521,19 @@
             // Create tag.
             var tag = $('<li></li>')
                 .addClass('tagit-choice ui-widget-content ui-state-default ui-corner-all')
-                .addClass(additionalClass)
-                .attr(attr1name, attr1)
-                .attr(attr2name, attr2)
-                .attr("data-iconClass", iconClass)
-                .append("<i class=" + iconClass + "></i>")
-                .append(label);
+                .addClass(additionalClass);
+
+            // Only add custom attributes if they are not empty
+            attr1 && tag.attr(attr1name || 'data-attr1', attr1);
+            attr2 && tag.attr(attr2name || 'data-attr2', attr2);
+
+            // Only add icon element if we're given a class
+            if (iconClass) {
+                tag.attr("data-iconClass", iconClass)
+                   .append("<i class=" + iconClass + "></i>");
+            }
+
+            tag.append(label);
 
             if (this.options.readOnly){
                 tag.addClass('tagit-choice-read-only');
@@ -558,8 +568,8 @@
 
             if (this.options.singleField) {
                 var tags = this.assignedTags();
-                // If our tag to add contains the delimiter, then quote it.
-                if (~value.indexOf(this.options.singleFieldDelimiter)) {
+                // If our tag to add contains any value in the RegExp, then quote it.
+                if (quoteTags.test(value)) {
                     value = "\"" + value + "\"";
                 }
                 tags.push(value);
@@ -601,6 +611,9 @@
             if (this.options.singleField) {
                 var tags = this.assignedTags();
                 var removedTagLabel = this.tagLabel(tag);
+                if (quoteTags.test(removedTagLabel)) {
+                    removedTagLabel = "\"" + removedTagLabel + "\"";
+                }
                 tags = $.grep(tags, function(el){
                     return el != removedTagLabel;
                 });
@@ -643,4 +656,3 @@
 
     });
 })(jQuery);
-
